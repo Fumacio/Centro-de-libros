@@ -4,6 +4,7 @@ import { books, getBook } from "@/data/books";
 import { getCategory } from "@/data/categories";
 import { BookCover } from "@/components/BookCover";
 import { formatYear, languageNames } from "@/lib/search";
+import { getReaderInfo } from "@/lib/reader";
 
 export function generateStaticParams() {
   return books.map((b) => ({ slug: b.slug }));
@@ -19,6 +20,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const book = getBook(slug);
   if (!book) notFound();
+  const reader = getReaderInfo(book.slug);
 
   return (
     <article className="grid gap-8 sm:grid-cols-[220px_1fr]">
@@ -50,12 +52,18 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
         <p className="mt-5 max-w-prose leading-relaxed">{book.description}</p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <span
-            className="cursor-not-allowed rounded-full bg-accent/50 px-5 py-2 text-white"
-            title="El lector por páginas llega en el próximo paso"
-          >
-            📖 Leer (pronto)
-          </span>
+          {reader ? (
+            <Link href={`/libros/${book.slug}/leer`} className="rounded-full bg-accent px-5 py-2 text-white hover:opacity-90">
+              📖 Leer · {reader.paginas} páginas
+            </Link>
+          ) : (
+            <span
+              className="cursor-not-allowed rounded-full bg-accent/50 px-5 py-2 text-white"
+              title="Todavía no cargamos el texto de este libro"
+            >
+              📖 Leer (pronto)
+            </span>
+          )}
           <span
             className="cursor-not-allowed rounded-full border border-line px-5 py-2 text-muted"
             title="Los audiolibros llegan con el generador de voces"
