@@ -19,6 +19,7 @@ Necesita poppler-utils (pdftotext, pdfimages, pdftoppm, pdfinfo) y Pillow.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -50,6 +51,8 @@ def contar_paginas(pdf: Path) -> int:
     return int(m.group(1))
 
 
+# Marcas que deja InDesign al exportar ("Novela.indd 13", "21/1/20 12:42 p.m.").
+MARCA_DE_IMPRENTA = re.compile(r"\.indd\b|^\d{1,2}/\d{1,2}/\d{2,4}\s+\d{1,2}:\d{2}")
 NUMERO_DE_PAGINA = re.compile(r"[\divxlcIVXLC\-–— ]{1,8}")
 
 
@@ -94,7 +97,7 @@ def parrafos_de_pagina(pdf: Path, n: int) -> list[str]:
             prev_x1 = x1
         if actual:
             salida.append(unir(actual))
-    return [p for p in salida if p and not NUMERO_DE_PAGINA.fullmatch(p)]
+    return [p for p in salida if p and not NUMERO_DE_PAGINA.fullmatch(p) and not MARCA_DE_IMPRENTA.search(p)]
 
 
 RUIDO = re.compile(r"(https?://\S+|www\.\S+|\d{1,4})")
@@ -196,6 +199,32 @@ def renderizar_pagina(pdf: Path, n: int, carpeta: Path, tmp: Path, nombre: str |
     return nombre
 
 
+def quitar_repetidos(paginas: list[dict], carpeta_img: Path) -> None:
+    """Saca encabezados y adornos que se repiten en muchas páginas."""
+    minimo = max(3, len(paginas) // 5)
+    textos: dict[str, int] = {}
+    for p in paginas:
+        for t in set(p["parrafos"]):
+            if len(t) < 40:
+                textos[t] = textos.get(t, 0) + 1
+    huellas: dict[str, str] = {}
+    usos: dict[str, int] = {}
+    for p in paginas:
+        for img in p["imagenes"]:
+            h = hashlib.md5((carpeta_img / img).read_bytes()).hexdigest()
+            huellas[img] = h
+            usos[h] = usos.get(h, 0) + 1
+    for p in paginas:
+        p["parrafos"] = [t for t in p["parrafos"] if textos.get(t, 0) < minimo]
+        quedan = []
+        for img in p["imagenes"]:
+            if usos[huellas[img]] < minimo:
+                quedan.append(img)
+            else:
+                (carpeta_img / img).unlink()
+        p["imagenes"] = quedan
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("slug", help="slug del libro en src/data/books.ts, p. ej. don-quijote")
@@ -245,6 +274,8 @@ def main() -> None:
                     paginas.append(pagina)
                 print(f"\rPágina {n}/{total}", end="", flush=True)
         print()
+
+    quitar_repetidos(paginas, destino / "img")
 
     (destino / "libro.json").write_text(
         json.dumps({"slug": args.slug, "paginas": paginas}, ensure_ascii=False),

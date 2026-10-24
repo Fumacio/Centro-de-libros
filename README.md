@@ -1,6 +1,6 @@
 # Centro de libros
 
-Biblioteca web de libros de dominio público con categorías, portadas, buscador, lectura por páginas y audiolibros.
+Biblioteca web de clásicos con categorías, portadas, buscador, lectura por páginas y audiolibros.
 
 ## Correr en local
 

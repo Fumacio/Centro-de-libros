@@ -73,11 +73,11 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
         </div>
 
         <p className="mt-6 text-xs text-muted">
-          Fuente:{" "}
+          {book.edition && <>Texto: {book.edition} · </>}
+          Original en{" "}
           <a href={book.source.url} className="underline hover:text-accent" target="_blank" rel="noreferrer">
             {book.source.name}
-          </a>{" "}
-          · Dominio público
+          </a>
         </p>
       </div>
     </article>

@@ -37,6 +37,8 @@ export interface Book {
   /** Color base para la portada generada. */
   color: string;
   source: BookSource;
+  /** Edición de la que sale el texto que se lee en la app. */
+  edition?: string;
   /** El original tiene ilustraciones (modo páginas con imágenes). */
   illustrated: boolean;
   /** Ruta al audiolibro cuando exista (paso 3). */

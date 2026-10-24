@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Centro de libros",
-  description: "Libros de dominio público para leer y escuchar.",
+  description: "Clásicos de la literatura para leer y escuchar.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </header>
         <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 py-10 text-xs text-muted">
-          Todos los libros son de dominio público. Textos de Project Gutenberg.
+          Clásicos de la literatura para leer y escuchar. Cada libro indica de qué edición sale su texto.
         </footer>
       </body>
     </html>
