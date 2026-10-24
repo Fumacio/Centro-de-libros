@@ -23,5 +23,13 @@ export default async function ReadPage({ params }: { params: Promise<{ slug: str
   const info = getReaderInfo(slug);
   if (!book || !info) notFound();
 
-  return <Reader slug={book.slug} title={book.title} author={book.author} hasOriginal={info.original} />;
+  return (
+    <Reader
+      slug={book.slug}
+      title={book.title}
+      author={book.author}
+      hasOriginal={info.original}
+      hasAudio={Boolean(info.audio)}
+    />
+  );
 }

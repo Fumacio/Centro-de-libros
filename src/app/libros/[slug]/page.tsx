@@ -64,12 +64,15 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
               📖 Leer (pronto)
             </span>
           )}
-          <span
-            className="cursor-not-allowed rounded-full border border-line px-5 py-2 text-muted"
-            title="Los audiolibros llegan con el generador de voces"
-          >
-            🎧 Escuchar (pronto)
-          </span>
+{reader && (
+            <Link
+              href={`/libros/${book.slug}/leer`}
+              className="rounded-full border border-line px-5 py-2 hover:border-accent"
+              title={reader.audio ? "Audiolibro con voz generada" : "Se lee con la voz de tu navegador"}
+            >
+              🎧 Escuchar
+            </Link>
+          )}
         </div>
 
         <p className="mt-6 text-xs text-muted">
