@@ -140,7 +140,7 @@ export function Reader({ slug, title, author, hasOriginal, hasAudio }: Props) {
     return narrate(
       current.parrafos,
       Math.min(resumeFrom.current, Math.max(0, current.parrafos.length - 1)),
-      { rate, voice: voices.find((v) => v.name === voiceName) },
+      { rate, voice: voices.find((v) => v.name === voiceName) ?? voices[0] },
       {
         onParagraph: (i) => {
           resumeFrom.current = i;
@@ -352,7 +352,7 @@ export function Reader({ slug, title, author, hasOriginal, hasAudio }: Props) {
               ))}
             </select>
           </label>
-          {!usingGenerated && voices.length > 1 && (
+          {!usingGenerated && voices.length > 0 && (
             <label className="flex min-w-0 items-center gap-1 text-muted">
               Voz
               <select
@@ -360,7 +360,7 @@ export function Reader({ slug, title, author, hasOriginal, hasAudio }: Props) {
                 onChange={(e) => changeVoice(e.target.value)}
                 className="min-w-0 max-w-48 rounded border border-line bg-surface px-1 py-1 text-foreground"
               >
-                <option value="">Automática</option>
+                <option value="">Automática{voices[0] ? ` (${voices[0].name})` : ""}</option>
                 {voices.map((v) => (
                   <option key={v.name} value={v.name}>
                     {v.name}

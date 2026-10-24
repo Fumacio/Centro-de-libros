@@ -66,13 +66,25 @@ export function speechSupported() {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-/** Voces en español disponibles en el navegador, las locales primero. */
+/**
+ * Qué tan natural suena una voz. Las neuronales de Edge ("Online (Natural)") son las mejores, después
+ * las de Google en Chrome; las de Windows ("Microsoft Helena") suenan robóticas.
+ */
+function voiceQuality(v: SpeechSynthesisVoice) {
+  const lang = v.lang.toLowerCase();
+  let score = /natural|online|neural/i.test(v.name) ? 20 : /google/i.test(v.name) ? 10 : 0;
+  if (lang === "es-ar") score += 2;
+  else if (lang === "es-419" || lang === "es-mx" || lang === "es-us") score += 1;
+  return score;
+}
+
+/** Voces en español disponibles en el navegador, las más naturales primero. */
 export function spanishVoices(): SpeechSynthesisVoice[] {
   if (!speechSupported()) return [];
   return speechSynthesis
     .getVoices()
     .filter((v) => v.lang.toLowerCase().startsWith("es"))
-    .sort((a, b) => Number(b.localService) - Number(a.localService) || a.name.localeCompare(b.name));
+    .sort((a, b) => voiceQuality(b) - voiceQuality(a) || a.name.localeCompare(b.name));
 }
 
 export const narrateWithSpeech: Narrate = (parrafos, from, { rate, voice }, events) => {
