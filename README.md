@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Centro de libros
 
-## Getting Started
+Biblioteca web de libros de dominio público con categorías, portadas, buscador, lectura por páginas y audiolibros.
 
-First, run the development server:
+## Correr en local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estructura
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/data/books.ts`: catálogo de libros (por ahora datos locales).
+- `src/data/categories.ts`: categorías.
+- `src/lib/search.ts`: buscador (ignora mayúsculas y tildes).
+- `src/components/BookCover.tsx`: portada real de Project Gutenberg, o una generada si no carga.
+- `src/components/Reader.tsx`: lector por páginas.
 
-## Learn More
+## Cargar un libro para leer
 
-To learn more about Next.js, take a look at the following resources:
+Convertí el PDF con el script (necesita `poppler-utils` y Pillow):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+python3 scripts/convertir_pdf.py don-quijote ~/Descargas/quijote.pdf
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El primer argumento es el `slug` del libro en `src/data/books.ts`. El script guarda el texto por páginas y
+las ilustraciones en `public/libros/<slug>/` y habilita el botón **Leer**. Con `--paginas-como-imagen`
+también guarda cada página tal cual se ve en el PDF (modo "Página original"); conviene usarlo solo en
+libros ilustrados porque ocupa más espacio.
 
-## Deploy on Vercel
+## Próximos pasos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Audiolibros con el generador de voces en Python.
