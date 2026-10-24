@@ -17,6 +17,8 @@ export interface ReaderInfo {
   paginas: number;
   imagenes: number;
   original: boolean;
+  /** Tiene audiolibro generado con scripts/generar_audio.py. */
+  audio?: boolean;
 }
 
 const index = lectura as Record<string, ReaderInfo>;
