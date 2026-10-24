@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Book } from "@/lib/types";
 import { BookCover } from "./BookCover";
 import { formatYear } from "@/lib/search";
+import { getReaderInfo } from "@/lib/reader";
 
 export function BookCard({ book }: { book: Book }) {
   return (
@@ -12,6 +13,7 @@ export function BookCard({ book }: { book: Book }) {
         {book.author} · {formatYear(book.year)}
       </p>
       <div className="mt-1 flex gap-1 text-[10px]">
+        {getReaderInfo(book.slug) && <span className="rounded bg-accent/15 px-1.5 py-0.5 text-accent">Para leer</span>}
         {book.illustrated && <span className="rounded bg-surface px-1.5 py-0.5">Ilustrado</span>}
         {book.audio && <span className="rounded bg-surface px-1.5 py-0.5">Audiolibro</span>}
       </div>

@@ -1,0 +1,52 @@
+{
+  "alicia-en-el-pais-de-las-maravillas": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 124
+  },
+  "don-quijote": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 471
+  },
+  "dracula": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 660
+  },
+  "fabulas-de-esopo": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 66
+  },
+  "frankenstein": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 183
+  },
+  "la-isla-del-tesoro": {
+    "imagenes": 14,
+    "original": true,
+    "paginas": 98
+  },
+  "la-maquina-del-tiempo": {
+    "imagenes": 2,
+    "original": false,
+    "paginas": 73
+  },
+  "las-aventuras-de-sherlock-holmes": {
+    "imagenes": 0,
+    "original": false,
+    "paginas": 244
+  },
+  "lazarillo-de-tormes": {
+    "imagenes": 1,
+    "original": false,
+    "paginas": 42
+  },
+  "peter-pan": {
+    "imagenes": 15,
+    "original": true,
+    "paginas": 98
+  }
+}

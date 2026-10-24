@@ -1,0 +1,298 @@
+#!/usr/bin/env python3
+"""Convierte el PDF de un libro en páginas para el lector de la app.
+
+Uso:
+    python3 scripts/convertir_pdf.py <slug> <archivo.pdf> [--paginas-como-imagen]
+    python3 scripts/convertir_pdf.py <slug> <archivo.txt>
+
+También acepta el texto ya extraído de un PDF (.txt), donde cada línea en
+blanco marca un cambio de página. En ese caso no hay imágenes.
+
+Genera public/libros/<slug>/:
+    libro.json        texto de cada página, en párrafos, y sus imágenes
+    img/              ilustraciones extraídas del PDF (JPEG)
+    pag/              (opcional) cada página renderizada como imagen
+
+Y actualiza src/data/lectura.json con el número de páginas del libro.
+
+Necesita poppler-utils (pdftotext, pdfimages, pdftoppm, pdfinfo) y Pillow.
+"""
+
+import argparse
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+from PIL import Image
+
+RAIZ = Path(__file__).resolve().parent.parent
+INDICE = RAIZ / "src" / "data" / "lectura.json"
+
+# Imágenes más chicas que esto suelen ser adornos, líneas o logos.
+MIN_LADO = 120
+MAX_ANCHO = 1000
+
+
+def run(*args: str) -> str:
+    return subprocess.run(args, check=True, capture_output=True, text=True).stdout
+
+
+def contar_paginas(pdf: Path) -> int:
+    info = run("pdfinfo", str(pdf))
+    m = re.search(r"^Pages:\s+(\d+)", info, re.M)
+    if not m:
+        sys.exit("No pude leer la cantidad de páginas del PDF.")
+    return int(m.group(1))
+
+
+# Marcas que deja InDesign al exportar ("Novela.indd 13", "21/1/20 12:42 p.m.").
+MARCA_DE_IMPRENTA = re.compile(r"\.indd\b|^\d{1,2}/\d{1,2}/\d{2,4}\s+\d{1,2}:\d{2}")
+NUMERO_DE_PAGINA = re.compile(r"[\divxlcIVXLC\-–— ]{1,8}")
+
+
+def unir(lineas: list[str]) -> str:
+    texto = ""
+    for linea in lineas:
+        if texto.endswith("-") and linea[:1].islower():
+            texto = texto[:-1] + linea  # pala-\nbra
+        else:
+            texto = f"{texto} {linea}" if texto else linea
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def parrafos_de_pagina(pdf: Path, n: int) -> list[str]:
+    """Lee los bloques de texto de la página con sus coordenadas y arma párrafos.
+
+    pdftotext suele dar un bloque por párrafo. Cuando junta varios, se corta
+    también donde una línea termina antes del margen o la siguiente tiene sangría.
+    """
+    xml = run("pdftotext", "-f", str(n), "-l", str(n), "-bbox-layout", str(pdf), "-")
+    xml = re.sub(r"<!DOCTYPE[^>]*>", "", xml)
+    xml = re.sub(r'\sxmlns="[^"]+"', "", xml, count=1)
+    raiz = ET.fromstring(xml)
+    salida = []
+    for bloque in raiz.iter("block"):
+        bx0, bx1 = float(bloque.get("xMin")), float(bloque.get("xMax"))
+        ancho = max(bx1 - bx0, 1)
+        actual: list[str] = []
+        prev_x1 = None
+        for linea in bloque.iter("line"):
+            palabras = [w.text or "" for w in linea.iter("word")]
+            texto = " ".join(p for p in palabras if p).strip()
+            if not texto:
+                continue
+            x0, x1 = float(linea.get("xMin")), float(linea.get("xMax"))
+            sangria = x0 - bx0 > ancho * 0.03
+            corta = prev_x1 is not None and bx1 - prev_x1 > ancho * 0.15
+            if actual and (sangria or corta):
+                salida.append(unir(actual))
+                actual = []
+            actual.append(texto)
+            prev_x1 = x1
+        if actual:
+            salida.append(unir(actual))
+    return [p for p in salida if p and not NUMERO_DE_PAGINA.fullmatch(p) and not MARCA_DE_IMPRENTA.search(p)]
+
+
+RUIDO = re.compile(r"(https?://\S+|www\.\S+|\d{1,4})")
+INDICE_LINEA = re.compile(r"\.{5,}\s*\d*\s*$")
+FIN_DE_FRASE = re.compile(r"[.!?:»”\")]\s*$")
+
+
+def paginas_de_txt(txt: Path) -> list[list[str]]:
+    """Arma páginas y párrafos a partir del texto extraído de un PDF.
+
+    Los saltos de página son líneas en blanco. Dentro de una página, un
+    párrafo termina en una línea corta que cierra una frase, una línea muy
+    corta queda sola (suele ser un título) y los diálogos (—) siempre empiezan
+    párrafo nuevo.
+    """
+    texto = txt.read_text(encoding="utf-8", errors="replace").replace("\r", "")
+    paginas = []
+    for bloque in re.split(r"\n\s*\n", texto):
+        lineas = [l.strip() for l in bloque.splitlines()]
+        lineas = [l for l in lineas if l and not RUIDO.fullmatch(l) and not INDICE_LINEA.search(l)]
+        if not lineas:
+            continue
+        largo = max(len(l) for l in lineas)
+        parrafos, actual = [], []
+        for i, linea in enumerate(lineas):
+            if actual and linea[:1] in "—–-«" and len(linea) > 1:
+                parrafos.append(unir(actual))
+                actual = []
+            actual.append(linea)
+            siguiente = lineas[i + 1] if i + 1 < len(lineas) else ""
+            corta = len(linea) < largo * 0.8
+            titulo = (
+                len(linea) < largo * 0.5
+                and not actual[:-1]
+                and not linea[:1].islower()
+                and not siguiente[:1].islower()
+                and not re.search(r"[,;\-]$", linea)
+            )
+            if (FIN_DE_FRASE.search(linea) and corta) or titulo:
+                parrafos.append(unir(actual))
+                actual = []
+        if actual:
+            parrafos.append(unir(actual))
+        paginas.append(parrafos)
+    return paginas
+
+
+def guardar_jpeg(origen: Path, destino: Path) -> bool:
+    try:
+        with Image.open(origen) as im:
+            if min(im.size) < MIN_LADO:
+                return False
+            im = im.convert("RGB")
+            if im.width > MAX_ANCHO:
+                im = im.resize((MAX_ANCHO, round(im.height * MAX_ANCHO / im.width)))
+            im.save(destino, "JPEG", quality=80, optimize=True)
+            return True
+    except OSError:
+        return False
+
+
+def imagenes_de_pagina(pdf: Path, n: int, carpeta: Path, tmp: Path) -> list[str]:
+    for f in tmp.iterdir():
+        f.unlink()
+    subprocess.run(
+        ["pdfimages", "-f", str(n), "-l", str(n), "-png", str(pdf), str(tmp / "i")],
+        check=True,
+        capture_output=True,
+    )
+    nombres = []
+    for i, f in enumerate(sorted(tmp.iterdir())):
+        nombre = f"p{n:04d}-{i}.jpg"
+        if guardar_jpeg(f, carpeta / nombre):
+            nombres.append(nombre)
+    return nombres
+
+
+def recortar_margenes(ruta: Path) -> None:
+    """Quita el blanco alrededor de una lámina renderizada."""
+    with Image.open(ruta) as im:
+        gris = im.convert("L").point(lambda v: 255 if v < 235 else 0)
+        caja = gris.getbbox()
+        if caja:
+            im.crop(caja).save(ruta)
+
+
+def renderizar_pagina(pdf: Path, n: int, carpeta: Path, tmp: Path, nombre: str | None = None) -> str:
+    base = tmp / "render"
+    subprocess.run(
+        ["pdftoppm", "-f", str(n), "-l", str(n), "-r", "110", "-jpeg", "-singlefile", str(pdf), str(base)],
+        check=True,
+        capture_output=True,
+    )
+    nombre = nombre or f"{n:04d}.jpg"
+    render = base.with_suffix(".jpg")
+    if carpeta.name == "img":
+        recortar_margenes(render)
+    guardar_jpeg(render, carpeta / nombre)
+    return nombre
+
+
+def quitar_repetidos(paginas: list[dict], carpeta_img: Path) -> None:
+    """Saca encabezados y adornos que se repiten en muchas páginas."""
+    minimo = max(3, len(paginas) // 5)
+    textos: dict[str, int] = {}
+    for p in paginas:
+        for t in set(p["parrafos"]):
+            if len(t) < 40:
+                textos[t] = textos.get(t, 0) + 1
+    huellas: dict[str, str] = {}
+    usos: dict[str, int] = {}
+    for p in paginas:
+        for img in p["imagenes"]:
+            h = hashlib.md5((carpeta_img / img).read_bytes()).hexdigest()
+            huellas[img] = h
+            usos[h] = usos.get(h, 0) + 1
+    for p in paginas:
+        p["parrafos"] = [t for t in p["parrafos"] if textos.get(t, 0) < minimo]
+        quedan = []
+        for img in p["imagenes"]:
+            if usos[huellas[img]] < minimo:
+                quedan.append(img)
+            else:
+                (carpeta_img / img).unlink()
+        p["imagenes"] = quedan
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("slug", help="slug del libro en src/data/books.ts, p. ej. don-quijote")
+    ap.add_argument("pdf", type=Path, help="el PDF del libro, o su texto extraído (.txt)")
+    ap.add_argument(
+        "--paginas-como-imagen",
+        action="store_true",
+        help="también guarda cada página como imagen (modo 'original', ocupa más espacio)",
+    )
+    args = ap.parse_args()
+
+    if not re.fullmatch(r"[a-z0-9-]+", args.slug):
+        sys.exit("El slug solo puede tener minúsculas, números y guiones.")
+
+    destino = RAIZ / "public" / "libros" / args.slug
+    if destino.exists():
+        shutil.rmtree(destino)
+    (destino / "img").mkdir(parents=True)
+    if args.paginas_como_imagen:
+        (destino / "pag").mkdir()
+
+    paginas = []
+    if args.pdf.suffix.lower() == ".txt":
+        for n, parrafos in enumerate(paginas_de_txt(args.pdf), start=1):
+            paginas.append({"n": n, "parrafos": parrafos, "imagenes": []})
+    else:
+        total = contar_paginas(args.pdf)
+        with tempfile.TemporaryDirectory() as t:
+            tmp = Path(t) / "imgs"
+            tmp.mkdir()
+            for n in range(1, total + 1):
+                parrafos = parrafos_de_pagina(args.pdf, n)
+                imagenes = imagenes_de_pagina(args.pdf, n, destino / "img", tmp)
+                if imagenes and sum(len(p) for p in parrafos) < 300:
+                    # Página casi sin texto (portada, lámina): la renderizamos
+                    # entera, porque pdfimages no respeta giros ni recortes.
+                    for img in imagenes:
+                        (destino / "img" / img).unlink()
+                    nombre = f"p{n:04d}.jpg"
+                    renderizar_pagina(args.pdf, n, destino / "img", Path(t), nombre)
+                    imagenes, parrafos = [nombre], []
+                pagina = {"n": n, "parrafos": parrafos, "imagenes": imagenes}
+                if args.paginas_como_imagen:
+                    pagina["original"] = renderizar_pagina(args.pdf, n, destino / "pag", Path(t))
+                # Las páginas en blanco no aportan nada al lector.
+                if pagina["parrafos"] or pagina["imagenes"] or args.paginas_como_imagen:
+                    paginas.append(pagina)
+                print(f"\rPágina {n}/{total}", end="", flush=True)
+        print()
+
+    quitar_repetidos(paginas, destino / "img")
+
+    (destino / "libro.json").write_text(
+        json.dumps({"slug": args.slug, "paginas": paginas}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    if not any((destino / "img").iterdir()):
+        (destino / "img").rmdir()
+
+    indice = json.loads(INDICE.read_text(encoding="utf-8")) if INDICE.exists() else {}
+    indice[args.slug] = {
+        "paginas": len(paginas),
+        "imagenes": sum(len(p["imagenes"]) for p in paginas),
+        "original": args.paginas_como_imagen,
+    }
+    INDICE.write_text(json.dumps(indice, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    print(f"Listo: {len(paginas)} páginas en {destino.relative_to(RAIZ)}")
+
+
+if __name__ == "__main__":
+    main()
