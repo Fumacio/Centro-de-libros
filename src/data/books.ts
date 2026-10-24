@@ -44,7 +44,7 @@ export const books: Book[] = [
     originalTitle: "Alice's Adventures in Wonderland",
     author: "Lewis Carroll",
     year: 1865,
-    language: "en",
+    language: "es",
     categories: ["infantil", "fantasia", "clasicos"],
     description:
       "Alicia persigue a un conejo blanco y cae a un mundo absurdo de gatos que sonríen, reinas furiosas y fiestas de té interminables.",
@@ -74,7 +74,7 @@ export const books: Book[] = [
     originalTitle: "The Adventures of Sherlock Holmes",
     author: "Arthur Conan Doyle",
     year: 1892,
-    language: "en",
+    language: "es",
     categories: ["misterio"],
     description:
       "Doce casos del detective más famoso de Baker Street, narrados por su inseparable amigo, el doctor Watson.",
@@ -89,7 +89,7 @@ export const books: Book[] = [
     originalTitle: "The Time Machine",
     author: "H. G. Wells",
     year: 1895,
-    language: "en",
+    language: "es",
     categories: ["ciencia-ficcion", "clasicos"],
     description:
       "Un inventor viaja al año 802.701 y descubre una humanidad dividida en dos especies muy distintas.",
@@ -104,7 +104,7 @@ export const books: Book[] = [
     originalTitle: "Dracula",
     author: "Bram Stoker",
     year: 1897,
-    language: "en",
+    language: "es",
     categories: ["terror", "clasicos"],
     description:
       "A través de cartas y diarios se reconstruye la llegada del conde Drácula a Inglaterra y la lucha para detenerlo.",

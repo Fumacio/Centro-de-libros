@@ -15,6 +15,11 @@ type Mode = "texto" | "original";
 
 const FONT_SIZES = [16, 18, 20, 23, 26];
 
+/** Los títulos de capítulo llegan como párrafos cortos sin punto final. */
+function isHeading(text: string) {
+  return text.length < 60 && !/[.,;:!?»”"—–-]$/.test(text);
+}
+
 function load<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -147,11 +152,17 @@ export function Reader({ slug, title, author, hasOriginal }: Props) {
           />
         ) : (
           <div className="font-serif leading-relaxed" style={{ fontSize: FONT_SIZES[fontStep] }}>
-            {current.parrafos.map((p, i) => (
-              <p key={i} className="mb-4 text-pretty">
-                {p}
-              </p>
-            ))}
+            {current.parrafos.map((p, i) =>
+              isHeading(p) ? (
+                <h2 key={i} className="mb-4 mt-6 text-center font-bold">
+                  {p}
+                </h2>
+              ) : (
+                <p key={i} className="mb-4 text-pretty">
+                  {p}
+                </p>
+              ),
+            )}
             {current.imagenes.map((img) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img

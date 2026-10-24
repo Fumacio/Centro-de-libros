@@ -28,7 +28,7 @@ export interface Book {
   originalTitle?: string;
   author: string;
   year: number;
-  /** Idioma del texto original disponible en la fuente (ISO 639-1). */
+  /** Idioma del texto que se lee en la app (ISO 639-1). */
   language: "es" | "en" | "de" | "fr";
   categories: CategoryId[];
   description: string;
