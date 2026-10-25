@@ -17,8 +17,9 @@ Abrí http://localhost:3000.
 - `src/data/categories.ts`: categorías.
 - `src/lib/search.ts`: buscador (ignora mayúsculas y tildes).
 - `src/components/BookCover.tsx`: portada real de Project Gutenberg, o una generada si no carga.
-- `src/components/Reader.tsx`: lector por páginas, con modo **Escuchar**.
-- `src/lib/narration.ts`: narración párrafo por párrafo (audio generado o voz del navegador).
+- `src/components/Reader.tsx`: lector por páginas.
+- `src/components/AudioPlayer.tsx`: reproductor del audiolibro (en la página del libro y abajo en el lector).
+- `src/lib/audio.ts`: arma la URL del audio de cada libro.
 
 ## Cargar un libro para leer
 
@@ -33,27 +34,36 @@ las ilustraciones en `public/libros/<slug>/` y habilita el botón **Leer**. Con 
 también guarda cada página tal cual se ve en el PDF (modo "Página original"); conviene usarlo solo en
 libros ilustrados porque ocupa más espacio.
 
-## Escuchar
+## Audiolibros
 
-En el lector, **🎧 Escuchar** lee la página en voz alta, resalta el párrafo que se está leyendo y pasa sola
-a la página siguiente. Recuerda la página y el párrafo donde quedaste. Doble clic en un párrafo para
-escuchar desde ahí.
+Cada libro tiene **un archivo de audio**. Para agregarlo:
 
-Si el libro tiene audio generado (`"audio": true` en `src/data/lectura.json`), usa
-`public/libros/<slug>/audio/audio.json`:
+1. Copiá el archivo a la carpeta del libro: `public/libros/<slug>/audio.mp3`
+   (por ejemplo `public/libros/don-quijote/audio.mp3`).
+2. En `src/data/books.ts`, agregá el campo `audio` a ese libro:
 
-```json
-{
-  "voz": "Elena (es-AR)",
-  "paginas": {
-    "4": { "archivo": "0004.mp3", "marcas": [0, 12.4, 30.1] }
-  }
-}
-```
+   ```ts
+   {
+     slug: "don-quijote",
+     title: "Don Quijote de la Mancha",
+     // ...
+     audio: "audio.mp3",
+   },
+   ```
 
-Un archivo por página; `marcas` es el segundo donde empieza cada párrafo de esa página. Las páginas sin
-audio, o los libros sin audio generado, se leen con la voz del navegador.
+`audio` acepta tres formas:
 
-## Próximos pasos
+- Un nombre de archivo (`"audio.mp3"`): se busca en `public/libros/<slug>/`.
+- Una ruta desde `public` (`"/audios/quijote.mp3"`).
+- Una URL completa (`"https://…/quijote.mp3"`), para audios guardados en otro servicio.
 
-1. Generar el audio de cada página con el generador de voces en Python.
+Ojo con el tamaño: GitHub no acepta archivos de más de 100 MB, y un audiolibro largo en MP3 suele pasarlos.
+Esos conviene subirlos a un almacenamiento aparte (por ejemplo Vercel Blob) y poner la URL en `audio`.
+
+Formatos que reproducen todos los navegadores: **MP3** (recomendado), M4A/AAC y OGG/Opus. WAV también
+anda, pero ocupa mucho.
+
+Si un libro no tiene `audio`, no se muestra el reproductor. Cuando lo tiene, aparece en la página del libro
+y fijo abajo en el lector, con play/pausa, retroceder 15 s, adelantar 30 s, barra de progreso y velocidad
+(0,75× a 2×). Recuerda en cada navegador la posición de cada libro y la velocidad elegida, y la comparte
+entre la página del libro y el lector. Los libros con audio llevan la etiqueta "Audiolibro" en el catálogo.

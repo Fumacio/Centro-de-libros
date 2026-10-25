@@ -41,6 +41,9 @@ export interface Book {
   edition?: string;
   /** El original tiene ilustraciones (modo páginas con imágenes). */
   illustrated: boolean;
-  /** Ruta al audiolibro cuando exista (paso 3). */
+  /**
+   * Archivo del audiolibro (uno por libro). Nombre de archivo dentro de
+   * public/libros/<slug>/, ruta desde public o URL. Ver src/lib/audio.ts.
+   */
   audio?: string;
 }
