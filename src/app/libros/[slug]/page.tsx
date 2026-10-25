@@ -5,6 +5,9 @@ import { getCategory } from "@/data/categories";
 import { BookCover } from "@/components/BookCover";
 import { formatYear, languageNames } from "@/lib/search";
 import { getReaderInfo } from "@/lib/reader";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { isFavorite } from "@/lib/activity";
+import { getCurrentUser } from "@/lib/auth";
 
 export function generateStaticParams() {
   return books.map((b) => ({ slug: b.slug }));
@@ -21,6 +24,8 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const book = getBook(slug);
   if (!book) notFound();
   const reader = getReaderInfo(book.slug);
+  const user = await getCurrentUser();
+  const saved = user ? await isFavorite(user.id, book.slug) : false;
 
   return (
     <article className="grid gap-8 sm:grid-cols-[220px_1fr]">
@@ -73,6 +78,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
               🎧 Escuchar
             </Link>
           )}
+          <FavoriteButton slug={book.slug} initial={saved} loggedIn={Boolean(user)} />
         </div>
 
         <p className="mt-6 text-xs text-muted">

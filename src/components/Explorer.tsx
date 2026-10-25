@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { books } from "@/data/books";
 import { categories } from "@/data/categories";
 import { searchBooks } from "@/lib/search";
+import { recordSearch } from "@/app/cuenta/actions";
 import { BookCard } from "./BookCard";
 
 /** Buscador + filtro por categoría. El estado vive en la URL (?q=&cat=). */
-export function Explorer() {
+export function Explorer({ loggedIn = false }: { loggedIn?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -16,6 +17,13 @@ export function Explorer() {
   const cat = params.get("cat") ?? "";
 
   const results = useMemo(() => searchBooks(books, query, cat || undefined), [query, cat]);
+
+  // Con cuenta, las búsquedas alimentan las recomendaciones. Se guarda cuando deja de escribir.
+  useEffect(() => {
+    if (!loggedIn || (query.trim().length < 3 && !cat)) return;
+    const timer = setTimeout(() => recordSearch(query, cat || undefined).catch(() => {}), 1500);
+    return () => clearTimeout(timer);
+  }, [loggedIn, query, cat]);
 
   function update(next: { q?: string; cat?: string }) {
     const sp = new URLSearchParams(params.toString());
