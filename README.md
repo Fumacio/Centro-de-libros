@@ -56,6 +56,16 @@ las ilustraciones en `public/libros/<slug>/` y habilita el botón **Leer**. Con 
 también guarda cada página tal cual se ve en el PDF (modo "Página original"); conviene usarlo solo en
 libros ilustrados porque ocupa más espacio.
 
+El texto sale limpio (sin los cuadraditos de las palabras cortadas ni los encabezados de cada página).
+Después mirá las primeras y últimas páginas y sacá portada, créditos, índice y contratapa:
+
+```bash
+python3 scripts/limpiar_libro.py don-quijote --desde 12 --hasta 471
+```
+
+`--desde` y `--hasta` son los números de página del PDF. También acepta `--quitar 20,21` para borrar
+otras páginas y `--quitar-imagen p0073-0.jpg` para sacar un logo.
+
 ## Audiolibros
 
 Cada libro tiene **un archivo de audio**. Para agregarlo:

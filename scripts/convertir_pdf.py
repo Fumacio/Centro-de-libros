@@ -15,6 +15,10 @@ Genera public/libros/<slug>/:
 
 Y actualiza src/data/lectura.json con el número de páginas del libro.
 
+El texto sale ya limpio (ver scripts/limpiar_libro.py). Después conviene mirar
+las primeras y últimas páginas y sacar portada, créditos e índice con:
+    python3 scripts/limpiar_libro.py <slug> --desde N --hasta N
+
 Necesita poppler-utils (pdftotext, pdfimages, pdftoppm, pdfinfo) y Pillow.
 """
 
@@ -30,6 +34,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from PIL import Image
+
+from limpiar_libro import limpiar_texto, quitar_encabezados, unir_cortes_entre_paginas
 
 RAIZ = Path(__file__).resolve().parent.parent
 INDICE = RAIZ / "src" / "data" / "lectura.json"
@@ -276,6 +282,10 @@ def main() -> None:
         print()
 
     quitar_repetidos(paginas, destino / "img")
+    for pagina in paginas:
+        pagina["parrafos"] = [t for t in map(limpiar_texto, pagina["parrafos"]) if t]
+    quitar_encabezados(paginas)
+    unir_cortes_entre_paginas(paginas)
 
     (destino / "libro.json").write_text(
         json.dumps({"slug": args.slug, "paginas": paginas}, ensure_ascii=False),
