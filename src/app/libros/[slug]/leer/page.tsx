@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getBook } from "@/data/books";
 import { getReaderInfo, readableSlugs } from "@/lib/reader";
 import { Reader } from "@/components/Reader";
+import { audioSrc } from "@/lib/audio";
 
 export const dynamicParams = false;
 
@@ -29,7 +30,7 @@ export default async function ReadPage({ params }: { params: Promise<{ slug: str
       title={book.title}
       author={book.author}
       hasOriginal={info.original}
-      hasAudio={Boolean(info.audio)}
+      audio={audioSrc(book)}
     />
   );
 }

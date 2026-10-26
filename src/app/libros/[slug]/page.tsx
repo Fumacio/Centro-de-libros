@@ -5,6 +5,8 @@ import { getCategory } from "@/data/categories";
 import { BookCover } from "@/components/BookCover";
 import { formatYear, languageNames } from "@/lib/search";
 import { getReaderInfo } from "@/lib/reader";
+import { audioSrc } from "@/lib/audio";
+import { AudioPlayer } from "@/components/AudioPlayer";
 
 export function generateStaticParams() {
   return books.map((b) => ({ slug: b.slug }));
@@ -21,6 +23,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const book = getBook(slug);
   if (!book) notFound();
   const reader = getReaderInfo(book.slug);
+  const audio = audioSrc(book);
 
   return (
     <article className="grid gap-8 sm:grid-cols-[220px_1fr]">
@@ -64,16 +67,14 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
               📖 Leer (pronto)
             </span>
           )}
-{reader && (
-            <Link
-              href={`/libros/${book.slug}/leer`}
-              className="rounded-full border border-line px-5 py-2 hover:border-accent"
-              title={reader.audio ? "Audiolibro con voz generada" : "Se lee con la voz de tu navegador"}
-            >
-              🎧 Escuchar
-            </Link>
-          )}
         </div>
+
+        {audio && (
+          <section className="mt-6 rounded-xl border border-line bg-surface/50 p-4">
+            <h2 className="mb-3 font-semibold">🎧 Audiolibro</h2>
+            <AudioPlayer slug={book.slug} src={audio} />
+          </section>
+        )}
 
         <p className="mt-6 text-xs text-muted">
           {book.edition && <>Texto: {book.edition} · </>}
