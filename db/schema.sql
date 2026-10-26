@@ -40,3 +40,6 @@ create table if not exists favoritos (
   creado timestamptz not null default now(),
   primary key (usuario_id, libro)
 );
+
+-- Ajustes de la cuenta.
+alter table usuarios add column if not exists guardar_historial boolean not null default true;

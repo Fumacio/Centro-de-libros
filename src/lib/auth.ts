@@ -14,6 +14,9 @@ export interface User {
   id: number;
   nombre: string;
   email: string;
+  /** Si es false, no se guardan sus búsquedas. */
+  guardarHistorial: boolean;
+  creado: Date;
 }
 
 export async function hashPassword(password: string) {
@@ -48,6 +51,11 @@ export async function startSession(userId: number) {
   });
 }
 
+export async function endAllSessions(userId: number) {
+  await sql()`delete from sesiones where usuario_id = ${userId}`;
+  (await cookies()).delete(COOKIE);
+}
+
 export async function endSession() {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
@@ -61,8 +69,15 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token || !dbEnabled()) return null;
   const rows = await sql()`
-    select u.id, u.nombre, u.email from sesiones s join usuarios u on u.id = s.usuario_id
+    select u.id, u.nombre, u.email, u.guardar_historial, u.creado from sesiones s join usuarios u on u.id = s.usuario_id
     where s.token_hash = ${tokenHash(token)} and s.vence > now()`;
   const row = rows[0];
-  return row ? { id: Number(row.id), nombre: row.nombre, email: row.email } : null;
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    nombre: row.nombre,
+    email: row.email,
+    guardarHistorial: row.guardar_historial,
+    creado: new Date(row.creado),
+  };
 });

@@ -30,7 +30,14 @@ export async function getProgress(userId: number, slug: string): Promise<Progres
   return (rows[0] as Progress | undefined) ?? null;
 }
 
-export async function isFavorite(userId: number, slug: string) {
-  const rows = await sql()`select 1 from favoritos where usuario_id = ${userId} and libro = ${slug}`;
-  return rows.length > 0;
+
+export async function getFavorites(userId: number): Promise<string[]> {
+  const rows = await sql()`select libro from favoritos where usuario_id = ${userId} order by creado desc`;
+  return rows.map((r) => r.libro);
+}
+
+export async function getSearchHistory(userId: number, limit = 30) {
+  const rows = await sql()`
+    select texto, categoria, creado from busquedas where usuario_id = ${userId} order by creado desc limit ${limit}`;
+  return rows.map((r) => ({ texto: r.texto as string, categoria: r.categoria as string | null, creado: new Date(r.creado) }));
 }

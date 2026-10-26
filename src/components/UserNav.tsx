@@ -18,11 +18,13 @@ export async function UserNav() {
   }
   return (
     <>
-      <Link href="/para-ti" className="hover:text-accent">
-        Para ti
+      <Link href="/perfil" className="flex items-center gap-2 hover:text-accent" title="Tu perfil">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-accent font-semibold text-white">
+          {user.nombre.trim().charAt(0).toUpperCase()}
+        </span>
+        <span className="hidden sm:inline">{user.nombre}</span>
       </Link>
-      <form action={logout} className="flex items-center gap-2">
-        <span className="hidden text-muted sm:inline">{user.nombre}</span>
+      <form action={logout}>
         <button className="rounded-full border border-line px-3 py-1 hover:border-accent">Salir</button>
       </form>
     </>

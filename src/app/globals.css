@@ -9,8 +9,9 @@
   --accent: #9a4a1c;
 }
 
+/* Tema: el de la compu, salvo que se elija claro u oscuro en Ajustes. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="claro"]) {
     --background: #15120e;
     --foreground: #ede6db;
     --surface: #221d17;
@@ -18,6 +19,15 @@
     --muted: #a39887;
     --accent: #d27a43;
   }
+}
+
+:root[data-theme="oscuro"] {
+  --background: #15120e;
+  --foreground: #ede6db;
+  --surface: #221d17;
+  --line: #3a3229;
+  --muted: #a39887;
+  --accent: #d27a43;
 }
 
 @theme inline {
