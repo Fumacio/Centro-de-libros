@@ -5,6 +5,7 @@ import { Reader } from "@/components/Reader";
 import { ReadingSync } from "@/components/ReadingSync";
 import { getProgress } from "@/lib/activity";
 import { getCurrentUser } from "@/lib/auth";
+import { audioSrc } from "@/lib/audio";
 
 export const dynamicParams = false;
 
@@ -36,7 +37,7 @@ export default async function ReadPage({ params }: { params: Promise<{ slug: str
         title={book.title}
         author={book.author}
         hasOriginal={info.original}
-        hasAudio={Boolean(info.audio)}
+        audio={audioSrc(book)}
       />
     </>
   );
