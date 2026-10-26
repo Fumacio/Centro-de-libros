@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { books, getBook } from "@/data/books";
-import { BookCover } from "@/components/BookCover";
+import { ContinueReading } from "@/components/ContinueReading";
 import { BookCard } from "@/components/BookCard";
 import { ForYou } from "@/components/ForYou";
 import { getHistory } from "@/lib/activity";
@@ -34,29 +33,7 @@ export default async function ForYouPage() {
       {reading.length > 0 && (
         <section className="mb-10">
           <h2 className="font-serif text-2xl font-bold">Seguir leyendo</h2>
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {reading.map(({ book, pagina, total }) => (
-              <Link key={book.slug} href={`/libros/${book.slug}/leer`} className="group block">
-                <BookCover book={book} className="transition group-hover:-translate-y-1 group-hover:shadow-xl" />
-                <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-snug">{book.title}</h3>
-                {total ? (
-                  <>
-                    <div className="mt-1 h-1.5 rounded-full bg-surface">
-                      <div
-                        className="h-full rounded-full bg-accent"
-                        style={{ width: `${Math.round(((pagina + 1) / total) * 100)}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-muted">
-                      Página {pagina + 1} de {total}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted">Empezado</p>
-                )}
-              </Link>
-            ))}
-          </div>
+          <ContinueReading items={reading} />
         </section>
       )}
 

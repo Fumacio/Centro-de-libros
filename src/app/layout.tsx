@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { cookies } from "next/headers";
+import { FavoritesProvider } from "@/components/Favorites";
+import { Shell } from "@/components/Shell";
 import { UserNav } from "@/components/UserNav";
+import { getFavorites } from "@/lib/activity";
+import { getCurrentUser } from "@/lib/auth";
+import { readableSlugs } from "@/lib/reader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,27 +13,19 @@ export const metadata: Metadata = {
   description: "Clásicos de la literatura para leer y escuchar.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const user = await getCurrentUser();
+  const favorites = user ? await getFavorites(user.id) : [];
+  const theme = (await cookies()).get("tema")?.value;
+
   return (
-    <html lang="es">
+    <html lang="es" data-theme={theme === "claro" || theme === "oscuro" ? theme : undefined}>
       <body className="min-h-screen antialiased">
-        <header className="border-b border-line">
-          <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Link href="/" className="font-serif text-xl font-bold">
-              📚 Centro de libros
-            </Link>
-            <div className="flex items-center gap-4 text-sm">
-              <Link href="/categorias" className="hover:text-accent">
-                Categorías
-              </Link>
-              <UserNav />
-            </div>
-          </nav>
-        </header>
-        <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
-        <footer className="mx-auto max-w-6xl px-4 py-10 text-xs text-muted">
-          Clásicos de la literatura para leer y escuchar. Cada libro indica de qué edición sale su texto.
-        </footer>
+        <FavoritesProvider initial={favorites} loggedIn={Boolean(user)}>
+          <Shell loggedIn={Boolean(user)} readable={readableSlugs()} userNav={<UserNav />}>
+            {children}
+          </Shell>
+        </FavoritesProvider>
       </body>
     </html>
   );

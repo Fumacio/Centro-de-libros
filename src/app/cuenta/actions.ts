@@ -60,7 +60,7 @@ export async function logout() {
 export async function recordSearch(query: string, category?: string) {
   const user = await getCurrentUser();
   const texto = query.trim().slice(0, 100);
-  if (!user || (texto.length < 3 && !category)) return;
+  if (!user || !user.guardarHistorial || (texto.length < 3 && !category)) return;
   // Si sigue escribiendo la misma búsqueda, se reemplaza en lugar de sumar otra.
   await sql()`
     delete from busquedas where usuario_id = ${user.id} and creado > now() - interval '2 minutes'
@@ -84,5 +84,6 @@ export async function toggleFavorite(slug: string): Promise<boolean | null> {
     await sql()`insert into favoritos (usuario_id, libro) values (${user.id}, ${slug}) on conflict do nothing`;
   }
   revalidatePath("/para-ti");
+  revalidatePath("/perfil");
   return removed.length === 0;
 }
