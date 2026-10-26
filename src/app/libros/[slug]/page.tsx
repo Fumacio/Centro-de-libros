@@ -5,6 +5,9 @@ import { getCategory } from "@/data/categories";
 import { BookCover } from "@/components/BookCover";
 import { formatYear, languageNames } from "@/lib/search";
 import { getReaderInfo } from "@/lib/reader";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { isFavorite } from "@/lib/activity";
+import { getCurrentUser } from "@/lib/auth";
 import { audioSrc } from "@/lib/audio";
 import { AudioPlayer } from "@/components/AudioPlayer";
 
@@ -23,6 +26,8 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const book = getBook(slug);
   if (!book) notFound();
   const reader = getReaderInfo(book.slug);
+  const user = await getCurrentUser();
+  const saved = user ? await isFavorite(user.id, book.slug) : false;
   const audio = audioSrc(book);
 
   return (
@@ -67,6 +72,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
               📖 Leer (pronto)
             </span>
           )}
+          <FavoriteButton slug={book.slug} initial={saved} loggedIn={Boolean(user)} />
         </div>
 
         {audio && (

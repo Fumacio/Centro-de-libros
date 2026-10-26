@@ -11,15 +11,37 @@ npm run dev
 
 Abrí http://localhost:3000.
 
+Sin base de datos el sitio funciona igual, pero sin cuentas. Para tener cuentas en local, copiá
+`.env.example` a `.env.local` y poné la `DATABASE_URL` de Neon.
+
 ## Estructura
 
 - `src/data/books.ts`: catálogo de libros (por ahora datos locales).
+- `src/app/para-ti/page.tsx`: feed de recomendaciones de cada usuario.
 - `src/data/categories.ts`: categorías.
 - `src/lib/search.ts`: buscador (ignora mayúsculas y tildes).
 - `src/components/BookCover.tsx`: portada real de Project Gutenberg, o una generada si no carga.
 - `src/components/Reader.tsx`: lector por páginas.
 - `src/components/AudioPlayer.tsx`: reproductor del audiolibro (en la página del libro y abajo en el lector).
 - `src/lib/audio.ts`: arma la URL del audio de cada libro.
+
+## Cuentas y recomendaciones
+
+- Registro e inicio de sesión con email y contraseña (`src/lib/auth.ts`, `src/app/cuenta/actions.ts`).
+  La contraseña se guarda con scrypt y la sesión es una cookie de 30 días.
+- La base es Postgres en Neon. Las tablas están en `db/schema.sql` (se puede volver a correr sin romper nada).
+- Con cuenta se guarda qué libros abrió y en qué página va (`lecturas`), lo que busca (`busquedas`) y los
+  libros que guarda con ☆ (`favoritos`). El progreso se sincroniza entre dispositivos.
+- **Para ti** (`/para-ti`, y un resumen en el inicio) recomienda libros que todavía no leyó, según las
+  categorías y autores de lo que leyó, guardó y buscó (`src/lib/recommend.ts`). Lo reciente pesa más, y
+  una categoría muy común (como Clásicos) pesa menos que una rara.
+
+## Publicar en Vercel
+
+1. En https://vercel.com/new importá el repo `Fumacio/Centro-de-libros` (Vercel detecta Next.js solo).
+2. En **Environment Variables** agregá `DATABASE_URL` con la cadena de conexión de Neon
+   (Neon → proyecto `centro-de-libros` → **Connect**).
+3. **Deploy**. Cada push a `main` vuelve a publicar.
 
 ## Cargar un libro para leer
 

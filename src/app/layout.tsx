@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UserNav } from "@/components/UserNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +17,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Link href="/" className="font-serif text-xl font-bold">
               📚 Centro de libros
             </Link>
-            <Link href="/categorias" className="text-sm hover:text-accent">
-              Categorías
-            </Link>
+            <div className="flex items-center gap-4 text-sm">
+              <Link href="/categorias" className="hover:text-accent">
+                Categorías
+              </Link>
+              <UserNav />
+            </div>
           </nav>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>

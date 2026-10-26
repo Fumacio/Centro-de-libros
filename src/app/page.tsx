@@ -1,7 +1,15 @@
 import { Suspense } from "react";
+import { books } from "@/data/books";
 import { Explorer } from "@/components/Explorer";
+import { ForYou } from "@/components/ForYou";
+import { getHistory } from "@/lib/activity";
+import { getCurrentUser } from "@/lib/auth";
+import { recommend } from "@/lib/recommend";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+  const forYou = user ? recommend(books, await getHistory(user.id), 5) : [];
+
   return (
     <>
       <section className="mb-8">
@@ -10,8 +18,9 @@ export default function Home() {
           Una biblioteca de clásicos para leer página por página o escuchar como audiolibro.
         </p>
       </section>
+      {user && <ForYou items={forYou} more />}
       <Suspense>
-        <Explorer />
+        <Explorer loggedIn={Boolean(user)} />
       </Suspense>
     </>
   );

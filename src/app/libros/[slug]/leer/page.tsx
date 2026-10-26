@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { getBook } from "@/data/books";
 import { getReaderInfo, readableSlugs } from "@/lib/reader";
 import { Reader } from "@/components/Reader";
+import { ReadingSync } from "@/components/ReadingSync";
+import { getProgress } from "@/lib/activity";
+import { getCurrentUser } from "@/lib/auth";
 import { audioSrc } from "@/lib/audio";
 
 export const dynamicParams = false;
@@ -23,14 +26,19 @@ export default async function ReadPage({ params }: { params: Promise<{ slug: str
   const book = getBook(slug);
   const info = getReaderInfo(slug);
   if (!book || !info) notFound();
+  const user = await getCurrentUser();
+  const progress = user ? await getProgress(user.id, slug) : null;
 
   return (
-    <Reader
-      slug={book.slug}
-      title={book.title}
-      author={book.author}
-      hasOriginal={info.original}
-      audio={audioSrc(book)}
-    />
+    <>
+      {user && <ReadingSync slug={slug} total={info.paginas} saved={progress?.pagina ?? null} />}
+      <Reader
+        slug={book.slug}
+        title={book.title}
+        author={book.author}
+        hasOriginal={info.original}
+        audio={audioSrc(book)}
+      />
+    </>
   );
 }
